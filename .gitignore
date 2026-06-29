@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+._*
+.AppleDouble
+
+# Local tooling / agent state
+.claude/
+.playwright-mcp/
+
+# Reference / source PDFs (paper + course handout — not redistributed)
+*.pdf
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Misc
+*.log
+node_modules/

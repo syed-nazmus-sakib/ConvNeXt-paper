@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ConvNeXt — A ConvNet for the 2020s</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+
+<div class="viewport" id="viewport">
+  <div class="stage" id="stage">
+
+    <!-- ============================================================ 1. TITLE -->
+    <section class="slide title-slide" data-name="title">
+      <div class="title-kicker">University of Dhaka &nbsp;&bull;&nbsp; Robotics &amp; Mechatronics Engineering</div>
+      <h1 class="title-main">ConvNeXt</h1>
+      <div class="title-rule"></div>
+      <div class="title-sub">A ConvNet for the 2020s</div>
+      <div class="title-authors">Liu, Mao, Wu, Feichtenhofer, Darrell, Xie &nbsp;&bull;&nbsp; CVPR 2022</div>
+      <div class="title-credits">
+        <div class="credit-block">
+          <div class="credit-label">Presented by</div>
+          <div class="credit-name">Syed Nazmus Sakib <span class="credit-id">[AE-172-009]</span></div>
+          <div class="credit-name">M. M. Mahabub Morshed <span class="credit-id">[SH-172-010]</span></div>
+        </div>
+        <div class="credit-block">
+          <div class="credit-label">Presented to</div>
+          <div class="credit-name">Md Shifat-E-Arman Bhuiyan</div>
+          <div class="credit-role">Assistant Professor, Dept. of Robotics &amp; Mechatronics Engineering</div>
+          <div class="credit-role">University of Dhaka</div>
+        </div>
+      </div>
+      <div class="title-course">Introduction to Machine Learning</div>
+    </section>
+
+    <!-- ============================================================ 2. OPENING — history + timeline -->
+    <section class="slide" data-name="opening">
+      <h3 class="slide-title">The decade ConvNets <em>owned vision</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <ul class="bullets">
+            <li><b>2012 — AlexNet.</b> A deep ConvNet cut ImageNet top-5 error 26% → 16%, ending the feature-engineering era overnight.</li>
+            <li><b>2014–15 — VGG, Inception, ResNet.</b> Depth, 3×3 stacks, and <em>residual connections</em> made very deep networks trainable.</li>
+            <li>For a decade the ConvNet was the <em>universal backbone</em> — classification, detection, segmentation alike.</li>
+          </ul>
+        </div>
+        <div class="col open-tomb">
+          <figure class="hook-tomb fragment">
+            <img src="figures/rip_1.png" alt="hand-crafted features tombstone" />
+            <figcaption>1969–2012 · hand-crafted features (SIFT, HOG) — buried by deep learning</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="tl-track">
+          <div class="tl-item cnn"><span class="tl-year">1998</span><span class="tl-dot"></span><span class="tl-name">LeNet</span></div>
+          <div class="tl-item cnn"><span class="tl-year">2012</span><span class="tl-dot"></span><span class="tl-name">AlexNet</span></div>
+          <div class="tl-item cnn"><span class="tl-year">2014</span><span class="tl-dot"></span><span class="tl-name">VGGNet</span></div>
+          <div class="tl-item cnn"><span class="tl-year">2015</span><span class="tl-dot"></span><span class="tl-name">ResNet</span></div>
+          <div class="tl-item cnn"><span class="tl-year">2017</span><span class="tl-dot"></span><span class="tl-name">ResNeXt<br>MobileNet</span></div>
+          <div class="tl-item cnn"><span class="tl-year">2018</span><span class="tl-dot"></span><span class="tl-name">DenseNet</span></div>
+          <div class="tl-item cnn"><span class="tl-year">2019</span><span class="tl-dot"></span><span class="tl-name">EfficientNet</span></div>
+          <div class="tl-item tf"><span class="tl-year">2020</span><span class="tl-dot"></span><span class="tl-name">ViT</span></div>
+          <div class="tl-item tf"><span class="tl-year">2021</span><span class="tl-dot"></span><span class="tl-name">DeiT</span></div>
+          <div class="tl-item tf"><span class="tl-year">2021</span><span class="tl-dot"></span><span class="tl-name">Swin</span></div>
+          <div class="tl-item next"><span class="tl-year">2022</span><span class="tl-dot"></span><span class="tl-name">ConvNeXt</span></div>
+        </div>
+        <div class="tl-eras">
+          <span class="tl-era cnn">CNN era</span>
+          <span class="tl-era tf">Transformer era</span>
+          <span class="tl-era next">↩ ConvNeXt</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3. ACT 1 DIVIDER -->
+    <section class="slide divider-slide" data-name="act1" data-act="1">
+      <h2 class="divider-title">Motivation &amp; Context</h2>
+      <p class="divider-sub">Why this paper had to be written</p>
+    </section>
+
+    <!-- ============================================================ 4. TRANSFORMER EARTHQUAKE -->
+    <section class="slide" data-name="earthquake">
+      <h3 class="slide-title">2020 — the Transformer earthquake</h3>
+      <ul class="bullets">
+        <li class="fragment"><b>ViT (2020).</b> Cut an image into 16×16 patches, feed them to a pure Transformer. With enough data (JFT-300M) it <em>beat</em> the best ConvNets — with <em>no</em> convolution at all.</li>
+        <li class="fragment"><b>Swin Transformer (2021).</b> Brought back hierarchy and <em>local windows</em> of attention — becoming a general backbone that topped detection &amp; segmentation.</li>
+        <li class="fragment">The narrative hardened: <em>attention is the future; convolution is legacy.</em></li>
+        <li class="fragment"><b>But notice the irony</b> — Swin's wins came from re-introducing ConvNet priors (locality, hierarchy, sliding windows) <em>back into</em> the Transformer.</li>
+      </ul>
+      <p class="kicker-line fragment">If Swin had to borrow from ConvNets to win… how much was really <em>attention?</em></p>
+    </section>
+
+    <!-- ============================================================ 6. THE QUESTION -->
+    <section class="slide" data-name="question">
+      <h3 class="slide-title">The question ConvNeXt asks</h3>
+      <p class="lead fragment">A Swin Transformer differs from a ResNet in <em>two</em> ways at once — and they were always changed <em>together</em>:</p>
+      <div class="two-col tight-cards">
+        <div class="card numbered fragment"><span class="num">1</span>
+          <div class="card-head">The operator</div>
+          <p>A new <b>self-attention</b> layer replaces the convolution.</p>
+        </div>
+        <div class="card numbered fragment"><span class="num">2</span>
+          <div class="card-head">Everything else</div>
+          <p>A modern <b>training recipe</b> and <b>macro design</b>.</p>
+        </div>
+      </div>
+      <p class="center-note fragment">Everyone credited the <em>operator</em>. &nbsp;Nobody isolated the <em>recipe</em>.</p>
+      <div class="quote-box fragment">
+        <p class="quote-text">“How much of the gap survives if we modernize a <em>pure ConvNet</em> — and never touch the operator?”</p>
+        <p class="quote-cite">So the authors take a ResNet-50 and walk it, step by step, toward a Swin Transformer.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 7. ACT 2 DIVIDER -->
+    <section class="slide divider-slide" data-name="act2" data-act="2">
+      <h2 class="divider-title">Architecture &amp; Design Choices</h2>
+      <p class="divider-sub">The modernization roadmap, one decision at a time</p>
+    </section>
+
+    <!-- ============================================================ 8. GENEALOGY -->
+    <section class="slide" data-name="genealogy">
+      <h3 class="slide-title">Standing on a decade of ConvNet ideas</h3>
+      <p class="lead">ConvNeXt invents no new primitive — it curates the best ideas from ten years of research:</p>
+      <div class="gene-grid">
+        <figure class="gene fragment"><img src="figures/dc_resnet_residual.png"/><figcaption><b>ResNet</b> — residual connections</figcaption></figure>
+        <figure class="gene fragment"><img src="figures/dc_separable_evolution.png"/><figcaption><b>MobileNet</b> — depthwise separable</figcaption></figure>
+        <figure class="gene fragment"><img src="figures/dc_senet_block.png"/><figcaption><b>SENet</b> — channel attention</figcaption></figure>
+        <figure class="gene fragment"><img src="figures/dc_resnext_cardinality.png"/><figcaption><b>ResNeXt</b> — grouped conv</figcaption></figure>
+        <figure class="gene fragment"><img src="figures/dc_inverted_residual.png"/><figcaption><b>MobileNetV2</b> — inverted bottleneck</figcaption></figure>
+        <figure class="gene fragment"><img src="figures/dc_densenet_block.png"/><figcaption><b>DenseNet</b> — dense connectivity</figcaption></figure>
+      </div>
+      <p class="footnote">Also in the design space: ShuffleNet, SqueezeNet, EfficientNet, VGG (3×3 stacks), Inception (1×1 conv).</p>
+    </section>
+
+    <!-- ============================================================ 9. ROADMAP (animated) -->
+    <section class="slide" data-name="roadmap" data-anim="roadmap">
+      <h3 class="slide-title">The roadmap: one controlled experiment</h3>
+      <div class="roadmap-layout">
+        <div class="roadmap-chart" id="roadmapChart"><!-- built by JS --></div>
+        <div class="roadmap-side">
+          <p class="tag">ResNet-50 → Swin-T &nbsp;•&nbsp; FLOPs held ≈ 4.5G</p>
+          <ul class="bullets">
+            <li>Each bar = adopt <em>one</em> idea, re-train, measure.</li>
+            <li>Compute is held <em>constant</em> → every gain comes from <em>design</em>, not more FLOPs.</li>
+            <li>The dashed line marks <b>Swin-T</b> (81.3%). The journey ends <em>above</em> it.</li>
+          </ul>
+          <p class="emph">This chart is the spine of the whole talk.</p>
+          <button class="replay-btn" data-replay="roadmap">↻ replay</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10a. RECIPE — HEADLINE -->
+    <section class="slide" data-name="recipe" data-anim="recipebar">
+      <h3 class="slide-title">What if we change <em>nothing but the way we train it?</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <div class="big-delta"><span class="from">76.1%</span><span class="arrow">→</span><span class="to">78.8%</span><span class="plus">+2.7</span></div>
+          <p class="lead">Same ResNet-50 — not one layer touched. We only swap in a 2020s training recipe:</p>
+          <ul class="bullets">
+            <li>Train it far longer — <b>90 → 300 epochs</b>, with the <b>AdamW</b> optimizer.</li>
+            <li>Pile on augmentation — <b>Mixup, CutMix, RandAugment, Random Erasing</b>.</li>
+            <li>Regularize the depth — <b>Stochastic Depth</b> and <b>Label Smoothing</b>.</li>
+          </ul>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-head">The most honest — and most ignored — result</div>
+            <ul class="bullets tight">
+              <li>More than half of the ResNet's "gap" to Swin was never about the operator at all.</li>
+              <li>It was the <em>recipe</em>. The old ConvNets weren't out-designed — they were just <b>under-trained</b>.</li>
+              <li>So this is the fair starting line. <em>Every</em> architecture change later is measured on top of it.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="recipebar" id="recipeBar">
+        <div class="rb-row"><div class="rb-name">ResNet-50 · original 2015 recipe</div><div class="rb-track"><div class="rb-bar old" data-acc="76.1">76.1</div></div></div>
+        <div class="rb-row"><div class="rb-name">ResNet-50 · modern recipe</div><div class="rb-track"><div class="rb-bar new" data-acc="78.8">78.8</div></div></div>
+        <div class="rb-row"><div class="rb-name">Swin-T (target)</div><div class="rb-track"><div class="rb-bar swin" data-acc="81.3">81.3</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10b. RECIPE — AUGMENTATION -->
+    <section class="slide" data-name="recipe-aug">
+      <h3 class="slide-title">Inside the recipe · <em>data augmentation</em></h3>
+      <p class="lead">Show the network many more “views” of each image, so it can't memorize — it must generalize.</p>
+      <div class="recipe-grid">
+        <div class="rcard fragment">
+          <div class="rcard-viz"><div class="viz-mixup"><span class="em a">🐱</span><span class="em b">🐶</span></div></div>
+          <div class="rcard-name">Mixup</div>
+          <div class="rcard-how"><b>How</b> · blend two images <em>and</em> their labels: 0.6·cat + 0.4·dog.</div>
+          <div class="rcard-why"><b>Why</b> · forces linear behaviour between classes → smoother decision boundaries, less over-confidence.</div>
+        </div>
+        <div class="rcard fragment">
+          <div class="rcard-viz"><div class="viz-cutmix">🐱<span class="patch">🐶</span></div></div>
+          <div class="rcard-name">CutMix</div>
+          <div class="rcard-how"><b>How</b> · paste a rectangular patch of image B into image A; mix labels by patch area.</div>
+          <div class="rcard-why"><b>Why</b> · keeps real, sharp pixels (no blur) while still teaching the net to handle partial objects.</div>
+        </div>
+        <div class="rcard fragment">
+          <div class="rcard-viz"><div class="viz-randaug">🐱</div></div>
+          <div class="rcard-name">RandAugment</div>
+          <div class="rcard-how"><b>How</b> · apply a few random transforms — rotate, shear, colour, contrast — at a fixed magnitude.</div>
+          <div class="rcard-why"><b>Why</b> · huge, cheap data diversity with almost no hyper-parameters to tune.</div>
+        </div>
+        <div class="rcard fragment">
+          <div class="rcard-viz"><div class="viz-erase">🐱<span class="erase-block"></span></div></div>
+          <div class="rcard-name">Random Erasing</div>
+          <div class="rcard-how"><b>How</b> · blank out a random rectangle of the image during training.</div>
+          <div class="rcard-why"><b>Why</b> · the net can't rely on one give-away patch → robust to occlusion &amp; clutter.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10c. RECIPE — STOCHASTIC DEPTH -->
+    <section class="slide" data-name="stochastic">
+      <h3 class="slide-title">Inside the recipe · <em>Stochastic Depth</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <p class="tag">how a 300-epoch, very deep network avoids over-fitting</p>
+          <ul class="bullets">
+            <li class="fragment">A residual block gives the signal two routes: <b>through</b> its layers, or <b>around</b> them on the identity skip.</li>
+            <li class="fragment">The trick: on every mini-batch, flip a coin per block and <b>drop</b> some of them entirely — the block becomes a plain pass-through (deeper blocks dropped more often).</li>
+            <li class="fragment">So each step trains a different, <em>shallower</em> network. You're quietly training a whole <b>ensemble</b> — and the full-depth model at test time inherits all of it.</li>
+            <li class="fragment">Shorter expected paths also keep gradients healthy.</li>
+          </ul>
+          <div class="mini-anim">
+            <div class="viz-stoch">
+              <div class="layer"></div><div class="layer"></div><div class="layer"></div>
+              <div class="layer"></div><div class="layer"></div><div class="layer"></div>
+            </div>
+            <span class="mini-cap">live: blocks dropping each step</span>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided">
+            <img src="figures/residual_block_1.webp" alt="a residual block"/>
+            <figcaption>one residual block — layers + an identity skip</figcaption>
+          </figure>
+          <figure class="provided">
+            <img src="figures/residual_block_2.webp" alt="stochastic depth across mini-batches"/>
+            <figcaption>each mini-batch keeps a different random subset — the gate <i>b</i><sub>ℓ</sub> is a coin flip</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10d. RECIPE — LABEL SMOOTHING -->
+    <section class="slide" data-name="labelsmooth">
+      <h3 class="slide-title">Inside the recipe · <em>Label Smoothing</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <p class="tag">calibrating what we ask the network to predict</p>
+          <ul class="bullets">
+            <li class="fragment">We normally train against a <b>one-hot</b> label: the true class is 100%, every other class is exactly 0%.</li>
+            <li class="fragment">That asks the network to be <em>infinitely</em> confident — the logits keep growing and it clings too hard to the training data.</li>
+            <li class="fragment">Soften the target instead: give the true class most of the mass (ConvNeXt uses <b>90%</b>) and share the rest across the others.</li>
+            <li class="fragment">A little built-in doubt → <b>better-calibrated</b> probabilities and stronger generalization.</li>
+          </ul>
+          <div class="mini-anim">
+            <div class="viz-labelsmooth">
+              <div class="lb lb1"></div><div class="lb lb2"></div><div class="lb lb3"></div><div class="lb lb4"></div>
+            </div>
+            <span class="mini-cap">live: hard target softening</span>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided">
+            <img src="figures/label_smothing_1.png" alt="one-hot label distribution"/>
+            <figcaption>one-hot target: all the probability mass on a single class</figcaption>
+          </figure>
+          <figure class="provided">
+            <img src="figures/label_smothing_2.png" alt="label smoothing transform"/>
+            <figcaption>smoothed (example): 100% → 80%, the remainder shared out</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10e. MACRO OVERVIEW (agenda) -->
+    <section class="slide" data-name="macro-overview">
+      <h3 class="slide-title">Now the architecture — <em>five moves</em></h3>
+      <p class="lead">The recipe is fixed. From here we change the network itself, one decision at a time. We'll take each of these in its own slide:</p>
+      <div class="agenda">
+        <div class="ag-card fragment">
+          <div class="ag-num">1</div>
+          <div class="ag-ic ic-stage"><i></i><i></i><i class="hi"></i><i></i></div>
+          <div class="ag-title">Stage compute ratio</div>
+          <div class="ag-sub">(3,4,6,3) → (3,3,9,3)</div>
+        </div>
+        <div class="ag-card fragment">
+          <div class="ag-num">2</div>
+          <div class="ag-ic ic-patch"><i></i><i></i><i></i><i></i></div>
+          <div class="ag-title">“Patchify” stem</div>
+          <div class="ag-sub">overlapping conv → 4×4 patches</div>
+        </div>
+        <div class="ag-card fragment">
+          <div class="ag-num">3</div>
+          <div class="ag-ic ic-dw"><i></i><i></i><i></i></div>
+          <div class="ag-title">Depthwise convolutions</div>
+          <div class="ag-sub">split space &amp; channel mixing</div>
+        </div>
+        <div class="ag-card fragment">
+          <div class="ag-num">4</div>
+          <div class="ag-ic ic-ib"><i class="n"></i><i class="w"></i><i class="n"></i></div>
+          <div class="ag-title">Inverted bottleneck</div>
+          <div class="ag-sub">widen the middle, 4×</div>
+        </div>
+        <div class="ag-card fragment">
+          <div class="ag-num">5</div>
+          <div class="ag-ic ic-kernel"><i></i><i></i><i></i><i></i><i class="hi"></i><i></i><i></i><i></i><i></i></div>
+          <div class="ag-title">Larger kernels</div>
+          <div class="ag-sub">3×3 → 7×7</div>
+        </div>
+      </div>
+      <p class="kicker-line">Five moves, ≈4.5G FLOPs held fixed — then we assemble the final ConvNeXt block.</p>
+    </section>
+
+    <!-- ============================================================ 11. MACRO ① — STAGE RATIO -->
+    <section class="slide" data-name="macro-stage" data-anim="stage">
+      <h3 class="slide-title">What if the depth is in the <em>wrong stage?</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <p class="tag"><span class="acc">78.8 → 79.4</span> &nbsp;·&nbsp; Macro design ①</p>
+          <div class="explain">
+            <div class="ex-head">Four stages, one fixed budget</div>
+            <p>A ResNet sees an image in four stages, halving the resolution at each. Inside a stage it just repeats the same block — and ResNet-50's split is <b>(3, 4, 6, 3)</b>, sixteen blocks in all.</p>
+            <div class="ex-head">Borrow the Transformer's split</div>
+            <p>Swin pours most of its blocks into the third stage — a <b>1 : 1 : 3 : 1</b> ratio. ConvNeXt simply copies that, shifting blocks out of stage ② into stage ③: <b>(3, 3, 9, 3)</b>. Same depth, same ≈4.5G FLOPs — only the <em>distribution</em> moves.</p>
+            <div class="ex-head">The third stage does the thinking</div>
+            <p>Stage ③ runs at 14×14: cheap enough to stack deep, yet coarse enough to reason about object <em>parts</em> rather than edges. Depth spent here buys more accuracy per FLOP than anywhere else.</p>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided">
+            <img src="figures/stage_compute_ratio.webp" alt="ResNet-50 vs Swin-T stage compute ratio"/>
+            <figcaption>ResNet-50 spends 3:4:6:3 &nbsp;·&nbsp; Swin-T spends 1:1:3:1</figcaption>
+          </figure>
+          <div class="ratio" id="ratioBars">
+            <div class="ratio-row">
+              <div class="ratio-name">ResNet-50</div>
+              <div class="ratio-bar">
+                <span class="rseg" data-n="3">3</span><span class="rseg" data-n="4">4</span><span class="rseg s3" data-n="6">6</span><span class="rseg" data-n="3">3</span>
+              </div>
+            </div>
+            <div class="ratio-row cnx">
+              <div class="ratio-name">ConvNeXt-T</div>
+              <div class="ratio-bar">
+                <span class="rseg" data-n="3">3</span><span class="rseg" data-n="3">3</span><span class="rseg s3" data-n="9">9</span><span class="rseg" data-n="3">3</span>
+              </div>
+            </div>
+            <div class="ratio-note">stage ③ grows <b>6 → 9</b> as depth shifts out of stage ②</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 11b. MACRO ② — PATCHIFY STEM -->
+    <section class="slide" data-name="macro-stem" data-anim="stem">
+      <h3 class="slide-title">What if we cut the image into <em>clean patches?</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <p class="tag"><span class="acc">79.4 → 79.5</span> &nbsp;·&nbsp; Macro design ②</p>
+          <div class="explain">
+            <div class="ex-head">What a stem even does</div>
+            <p>Before any real processing, the <b>stem</b> compresses the raw 224×224 image into a smaller feature map that the rest of the network builds on.</p>
+            <div class="ex-head">Overlap, or clean tiles?</div>
+            <p>ResNet's stem is a 7×7 conv at <b>stride 2</b>, then a max-pool — its windows <b>overlap</b> and it shrinks the image in two coarse steps. ConvNeXt swaps in a single <b>4×4, stride-4</b> conv: every window is a clean, <b>non-overlapping</b> patch — exactly how ViT slices an image into tokens.</p>
+            <div class="ex-head">Speaking the Transformer's language</div>
+            <p>The accuracy move is tiny, but the point isn't the number — the ConvNet now ingests pixels the <em>same way</em> as the Transformer it's chasing. Simpler, faster, and a fair, apples-to-apples start.</p>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided">
+            <img src="figures/patchify.webp" alt="patchify stem: SWIN-T patches vs ResNet stem"/>
+            <figcaption>SWIN-T cuts the image into non-overlapping 4×4 patches &nbsp;·&nbsp; ResNet's stem is an overlapping conv</figcaption>
+          </figure>
+          <div class="tok-flow">
+            <div class="stem-img patch-grid" id="stemPatch"></div>
+            <div class="tok-arrow">→</div>
+            <div class="stem-tokens" id="stemTokens"></div>
+          </div>
+          <div class="pg-cap">each patch is flattened into one token → a sequence, like ViT</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 12. RESNEXT-IFY (animated) -->
+    <section class="slide" data-name="resnext" data-anim="depthwise">
+      <h3 class="slide-title">What if one convolution is doing <em>two jobs at once?</em></h3>
+      <div class="two-col wide-right">
+        <div class="col">
+          <p class="tag"><span class="acc">78.8 → 80.5</span> &nbsp;·&nbsp; Macro design ③ — the conceptual heart</p>
+          <div class="explain">
+            <div class="ex-head">One conv, two tangled jobs</div>
+            <p>A normal convolution does two things in a single step: it blends <b>neighbouring pixels</b> (space) <em>and</em> sums across <b>every input channel</b> (features). Powerful — but expensive, and the two roles are fused together.</p>
+            <div class="ex-head">Factor it: <em>where</em>, then <em>what</em></div>
+            <p>Depthwise-separable conv splits that in two. A <b>depthwise</b> conv gives each channel its own filter, so it mixes only over <b>space</b>. A <b>1×1 “pointwise”</b> conv then mixes only across <b>channels</b>. Same expressive power, a fraction of the FLOPs.</p>
+            <div class="ex-head">Spend the savings on width</div>
+            <p>Depthwise is so cheap that ConvNeXt reinvests the budget — widening the net <b>64 → 96</b> channels to match Swin. This pairing is the <b>biggest single jump</b> of the macro section.</p>
+            <div class="ex-head">The Transformer did this all along</div>
+            <p>Attention mixes across space; the MLP mixes across channels. Depthwise + pointwise is the convolutional echo of exactly that split — which is <em>why</em> the two families quietly converge.</p>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided big">
+            <img src="figures/depthwise_pointwise_conv.webp" alt="depthwise then pointwise convolution"/>
+            <figcaption>Depthwise — each channel its own 7×7 filter (space) &nbsp;→&nbsp; Pointwise 1×1 — combine channels (features)</figcaption>
+          </figure>
+          <div class="depthwise-anim">
+            <div class="dw-panel">
+              <div class="dw-label">Depthwise · mixes <b>space</b></div>
+              <div class="dw-grid" id="dwGrid"></div>
+              <div class="dw-sub">each channel, its own filter</div>
+            </div>
+            <div class="dw-panel">
+              <div class="dw-label">1×1 · mixes <b>channels</b></div>
+              <div class="dw-mix">
+                <div class="dw-stack" id="dwStack"></div>
+                <div class="dw-op">⊙</div>
+                <div class="dw-out" id="dwOut"></div>
+              </div>
+              <div class="dw-sub">all channels at one pixel → one value</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 13. INVERTED BOTTLENECK (animated) -->
+    <section class="slide" data-name="inverted" data-anim="inverted">
+      <h3 class="slide-title">What if we <em>widen</em> the middle instead of pinching it?</h3>
+      <div class="two-col wide-right">
+        <div class="col">
+          <p class="tag"><span class="acc">80.5 → 80.6</span> &nbsp;·&nbsp; Macro design ④ &nbsp;·&nbsp; from MobileNetV2</p>
+          <div class="explain">
+            <div class="ex-head">The classic bottleneck</div>
+            <p>A ResNet block <b>pinches</b> the channels down in the middle — <em>many → few → many</em> — so the costly 3×3 runs on few channels. Cheap, but the representation is squeezed through a narrow neck.</p>
+            <div class="ex-head">Flip it inside-out</div>
+            <p>The inverted residual does the opposite: <em>few → many → few</em>. It <b>expands</b> the channels ~4× in the middle, does the spatial mixing there (now a cheap <b>depthwise</b> conv), then projects back down.</p>
+            <div class="ex-head">Counter-intuitively, it's leaner</div>
+            <p>Because the spatial op is depthwise, the wide middle is cheap; the only heavy 1×1's sit on the thin ends. In the figure, the same block drops from <b>1.1M → 52K</b> weights.</p>
+            <div class="ex-head">It's literally the Transformer's MLP</div>
+            <p>A Transformer's feed-forward block expands the dimension 4× (96 → 384), applies a nonlinearity, and projects back to 96 — an inverted bottleneck. ConvNeXt's block and the FFN are the <em>same shape</em>.</p>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided big">
+            <img src="figures/inverted_bottleneck.png" alt="ResNet vs inverted residual bottleneck"/>
+            <figcaption>ResNet “many–few–many” (1.1M weights) &nbsp;vs&nbsp; inverted “few–many–few” (52K weights)</figcaption>
+          </figure>
+          <div class="ib-anim">
+            <div class="ib-block">
+              <div class="ib-title">ResNet · pinch</div>
+              <div class="ib-bar wide"><span>wide</span></div>
+              <div class="ib-bar narrow"><span>narrow</span></div>
+              <div class="ib-bar wide"><span>wide</span></div>
+              <div class="ib-shape">many → few → many</div>
+            </div>
+            <div class="ib-vs">vs</div>
+            <div class="ib-block">
+              <div class="ib-title">ConvNeXt · widen</div>
+              <div class="ib-bar narrow"><span>narrow</span></div>
+              <div class="ib-bar mid"><span>wide ×4</span></div>
+              <div class="ib-bar narrow"><span>narrow</span></div>
+              <div class="ib-shape">few → many → few</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14. LARGE KERNELS (animated) -->
+    <section class="slide" data-name="kernels" data-anim="kernel">
+      <h3 class="slide-title">Why has the kernel been stuck at <em>3×3?</em></h3>
+      <div class="two-col">
+        <div class="col">
+          <p class="tag"><span class="acc">80.6 → 80.6</span> &nbsp;·&nbsp; Macro design ⑤</p>
+          <div class="explain">
+            <div class="ex-head">A decade of 3×3 dogma</div>
+            <p>Since VGG, ConvNets stack tiny <b>3×3</b> kernels. But a Transformer's local attention looks at a whole <b>7×7</b> neighbourhood at once — a much wider view per layer.</p>
+            <div class="ex-head">Move the depthwise conv up first</div>
+            <p>To make big kernels affordable, ConvNeXt slides the depthwise layer <b>up</b>, ahead of the 1×1's, so it runs on fewer channels. A small dip (<span class="acc">80.6 → 79.9</span>) — but large kernels are now cheap.</p>
+            <div class="ex-head">Grow the window to 7×7</div>
+            <p>Enlarge the depthwise kernel <b>3 → 5 → 7</b> (<span class="acc">79.9 → 80.6</span>). Each layer now sees the same span as Swin's local-attention window — the last big conceptual gap to the Transformer, closed.</p>
+            <div class="ex-head">And it stops at 7</div>
+            <p>Push to 9 or 11 and accuracy <em>flatlines</em> while cost climbs. Seven is the sweet spot — an honest, empirical limit.</p>
+          </div>
+        </div>
+        <div class="col anim-col">
+          <div class="rf-anim">
+            <div class="rf-grid" id="rfGrid"></div>
+            <div class="rf-readout" id="rfReadout">3×3</div>
+            <div class="rf-cap">receptive field per layer · <b>7×7 = Swin's window</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14b. MACRO SUMMARY (animated chart) -->
+    <section class="slide" data-name="macro-summary" data-anim="summary">
+      <h3 class="slide-title">Five moves later — the <em>block is reshaped</em></h3>
+      <p class="lead">Same ≈4.5G FLOPs throughout. Each architectural move, and what it bought:</p>
+      <div class="summary-chart" id="summaryChart"><!-- built by JS --></div>
+      <p class="kicker-line">A pure ConvNet is now within <b>0.7%</b> of Swin-T — and the micro-design polish still to come pushes it <em>past</em>.</p>
+    </section>
+
+    <!-- ============================================================ 15. MICRO DESIGN -->
+    <section class="slide" data-name="micro">
+      <h3 class="slide-title">What if the block needs <em>far fewer parts?</em></h3>
+      <div class="two-col wide-right">
+        <div class="col">
+          <p class="tag"><span class="acc">80.6 → 81.5</span> &nbsp;·&nbsp; Micro design</p>
+          <div class="explain">
+            <div class="ex-head">Borrow the Transformer's sparsity</div>
+            <p>A ResNet block crams a norm and an activation after almost <em>every</em> layer. A Transformer block is strikingly bare — <b>one</b> activation, <b>one</b> norm. Each extra piece can disrupt the signal, so ConvNeXt strips the block down to match.</p>
+            <div class="ex-head">A smoother switch: ReLU → GELU</div>
+            <p>GELU is a smooth ReLU — it doesn't hard-cut at zero, letting a little negative signal (and a smooth gradient) through. The swap alone is accuracy-neutral, but keeping just <b>one GELU per block</b> lifts <span class="acc">80.6 → 81.3</span>.</p>
+            <div class="ex-head">Fewer, better norms: BN → LayerNorm</div>
+            <p>Drop to one norm per block (<span class="acc">81.3 → 81.4</span>), then swap BatchNorm for <b>LayerNorm</b> (<span class="acc">81.4 → 81.5</span>). LayerNorm normalizes each sample on its own — so it stays stable at the <b>tiny batch sizes</b> used for detection &amp; segmentation.</p>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided">
+            <img src="figures/relu_gelu_df.png" alt="ReLU vs GELU and their derivatives"/>
+            <figcaption>GELU — a smooth ReLU, with a smooth gradient (right)</figcaption>
+          </figure>
+          <figure class="provided">
+            <img src="figures/batchnorm_layernorm.jpeg" alt="LayerNorm vs BatchNorm"/>
+            <figcaption>LayerNorm normalizes per-sample (batch-independent) · BatchNorm depends on the batch</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 16. SEPARATE DOWNSAMPLING + FULL SUMMARY -->
+    <section class="slide" data-name="downsample">
+      <h3 class="slide-title">The finishing move — and the <em>full journey</em></h3>
+      <div class="two-col wide-right">
+        <div class="col">
+          <p class="tag"><span class="acc">81.5 → 82.0</span> &nbsp;·&nbsp; separate downsampling</p>
+          <div class="explain">
+            <div class="ex-head">Pull downsampling out of the block</div>
+            <p>ResNet shrinks resolution <em>inside</em> a residual block. ConvNeXt gives it a <b>dedicated layer between stages</b> — a 2×2, stride-2 conv with its own LayerNorm.</p>
+            <div class="ex-head">Why it earns its own layer</div>
+            <p>Untangling “change resolution” from “compute features” keeps training stable — a norm guards each resolution change, exactly like Swin's patch-merging. The last step: <span class="acc">81.5 → 82.0</span>.</p>
+          </div>
+        </div>
+        <div class="col">
+          <figure class="provided blockfig">
+            <img src="figures/cnx_block_designs.png" alt="Swin / ResNet / ConvNeXt blocks"/>
+            <figcaption>the finished ConvNeXt block, beside its ancestors — Swin &nbsp;·&nbsp; ResNet &nbsp;·&nbsp; ConvNeXt</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="journey">
+        <div class="jnode">ResNet-50<b>76.1</b></div>
+        <div class="jstep">recipe</div>
+        <div class="jnode">78.8</div>
+        <div class="jstep">macro ×5</div>
+        <div class="jnode">80.6</div>
+        <div class="jstep">micro</div>
+        <div class="jnode">81.5</div>
+        <div class="jstep">downsample</div>
+        <div class="jnode final">ConvNeXt-T<b>82.0</b></div>
+      </div>
+      <p class="journey-note">No new operator, no exotic primitive — just a decade of known ideas, re-applied with intent. <b>82.0 &gt; Swin-T 81.3.</b></p>
+    </section>
+
+    <!-- ============================================================ 18. ACT 3 DIVIDER -->
+    <section class="slide divider-slide" data-name="act3" data-act="3">
+      <h2 class="divider-title">Experimental Results &amp; Impact</h2>
+      <p class="divider-sub">Does the modernized ConvNet actually deliver?</p>
+    </section>
+
+    <!-- ============================================================ 19. IMAGENET-1K -->
+    <section class="slide" data-name="imagenet">
+      <h3 class="slide-title">ImageNet-1K — matching or beating Swin</h3>
+      <div class="two-col">
+        <div class="col">
+          <figure class="fig fragment">
+            <img src="figures/cnx_table1_in1k.png" alt="ImageNet-1K table"/>
+            <figcaption>Trained from scratch on ImageNet-1K, at matched FLOPs</figcaption>
+          </figure>
+        </div>
+        <div class="col">
+          <ul class="bullets">
+            <li class="fragment"><b>ConvNeXt-T 82.1%</b> vs Swin-T 81.3% (4.5G).</li>
+            <li class="fragment"><b>ConvNeXt-S 83.1%</b> vs Swin-S 83.0%.</li>
+            <li class="fragment"><b>ConvNeXt-B 83.8%</b> vs Swin-B 83.5%.</li>
+            <li class="fragment">Wins at <em>every</em> size — and at higher <em>throughput</em> than the matched Swin.</li>
+          </ul>
+          <p class="emph fragment">Same compute budget, consistently ahead.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 20. SCALING -->
+    <section class="slide" data-name="scaling">
+      <h3 class="slide-title">Scaling up — the accuracy / compute frontier</h3>
+      <div class="two-col">
+        <div class="col">
+          <figure class="fig fragment">
+            <img src="figures/cnx_bubble.png" alt="Accuracy bubble chart"/>
+            <figcaption>Bubble area ∝ FLOPs &nbsp;•&nbsp; purple = ConvNet, orange = Transformer</figcaption>
+          </figure>
+        </div>
+        <div class="col">
+          <ul class="bullets">
+            <li class="fragment">Across the whole curve, ConvNeXt sits on or above the Transformer frontier.</li>
+            <li class="fragment"><b>Pre-train on ImageNet-22K</b> and the gains hold at scale — the old "ConvNets don't scale with data" worry does not appear.</li>
+            <li class="fragment"><b>ConvNeXt-XL reaches 87.8%</b> (22K-pretrained, 384²).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 21. DOWNSTREAM -->
+    <section class="slide" data-name="downstream">
+      <h3 class="slide-title">Beyond classification — detection &amp; segmentation</h3>
+      <div class="two-col">
+        <figure class="fig fragment"><img src="figures/cnx_table3_coco.png"/><figcaption><b>COCO</b> detection &amp; segmentation (Mask R-CNN)</figcaption></figure>
+        <figure class="fig fragment"><img src="figures/cnx_table4_ade20k.png"/><figcaption><b>ADE20K</b> semantic segmentation (UperNet)</figcaption></figure>
+      </div>
+      <ul class="bullets">
+        <li class="fragment">As a <em>backbone</em>, ConvNeXt matches or beats Swin on box AP, mask AP and mIoU — the very tasks Swin was built to win.</li>
+        <li class="fragment">The gains <em>transfer</em> to real downstream vision, not just classification.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ 23. ACT 4 DIVIDER -->
+    <section class="slide divider-slide" data-name="act4" data-act="4">
+      <h2 class="divider-title">Conclusion &amp; Critical Reflection</h2>
+      <p class="divider-sub">What it proved — and what it left open</p>
+    </section>
+
+    <!-- ============================================================ 24. CONCLUSION (lesson + caveats merged) -->
+    <section class="slide" data-name="conclusion">
+      <h3 class="slide-title">The verdict</h3>
+      <div class="two-col">
+        <div class="col">
+          <div class="card-head">What it proved</div>
+          <ul class="bullets tight">
+            <li class="fragment"><b>The operator was never the whole story.</b> A modernized pure ConvNet matches a Vision Transformer at equal compute — classification, detection, segmentation.</li>
+            <li class="fragment"><b>Progress was confounded.</b> New models change operator <em>and</em> recipe at once; ConvNeXt's controlled walk separated them and credited each fairly.</li>
+            <li class="fragment"><b>Inductive bias still pays.</b> Locality &amp; hierarchy keep it efficient even without massive data — the priors ViT discarded were useful after all.</li>
+          </ul>
+        </div>
+        <div class="col">
+          <div class="card-head warn">The honest caveats</div>
+          <ul class="bullets tight">
+            <li class="fragment"><b>No new primitive.</b> Masterful engineering &amp; curation, not invention — and the biggest jump came from the <em>recipe</em>, not architecture.</li>
+            <li class="fragment"><b>Tuned toward Swin.</b> The roadmap optimizes to match one target — a different goal might yield a different "best".</li>
+            <li class="fragment"><b>Not the last word.</b> Attention–conv hybrids remain strong; this is a reset, not a finish line.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="kicker-line fragment">ConvNets and Transformers borrowed each other's best ideas.</p>
+    </section>
+
+    <!-- ============================================================ 25. TRIBUTE / GOODBYE -->
+    <section class="slide tribute-slide" data-name="tribute">
+      <div class="two-col">
+        <div class="col tribute-img fragment">
+          <img src="figures/convnet_tomb_flowers.png" alt="ConvNets tombstone, 2012–2022, with flowers" />
+        </div>
+        <div class="col">
+          <h2 class="tribute-title">One last tribute — <em>goodbye to convolutions</em></h2>
+          <p class="tribute-p">ConvNeXt was the last great push to prove the ConvNet still belongs — and it worked. Convolutions <b>solved vision</b>, and showed the world that deep learning could be <em>trusted</em>.</p>
+          <p class="tribute-p">But by <b>2026</b> the field has moved on: the frontier is <b>ViT-based</b>, trained <b>jointly on image + text</b>, and <b>open-vocabulary</b>.</p>
+          <p class="tribute-p">So here's one last bow to the architecture that carried vision for a decade.</p>
+          <div class="tribute-end">
+            <p class="big-statement">Thank you.</p>
+            <p class="thanks">Questions &amp; Answers</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 27. REFERENCES -->
+    <section class="slide" data-name="references">
+      <h3 class="slide-title">References</h3>
+      <div class="ref-grid">
+        <div class="ref-col">
+          <div class="ref-head">Primary paper</div>
+          <p>Liu, Mao, Wu, Feichtenhofer, Darrell, Xie. <em>A ConvNet for the 2020s.</em> CVPR 2022. arXiv:2201.03545.</p>
+          <div class="ref-head">Transformers in vision</div>
+          <p>Dosovitskiy et al. <em>An Image is Worth 16×16 Words (ViT).</em> ICLR 2021.</p>
+          <p>Liu et al. <em>Swin Transformer.</em> ICCV 2021.</p>
+          <p>Vaswani et al. <em>Attention Is All You Need.</em> NeurIPS 2017.</p>
+          <div class="ref-head">Foundational ConvNets</div>
+          <p>He et al. <em>Deep Residual Learning (ResNet).</em> CVPR 2016.</p>
+          <p>Xie et al. <em>Aggregated Residual Transformations (ResNeXt).</em> CVPR 2017.</p>
+        </div>
+        <div class="ref-col">
+          <div class="ref-head">Efficient &amp; modern ConvNets</div>
+          <p>Howard et al. <em>MobileNets.</em> 2017 &nbsp;•&nbsp; Sandler et al. <em>MobileNetV2.</em> CVPR 2018.</p>
+          <p>Hu et al. <em>Squeeze-and-Excitation.</em> CVPR 2018 &nbsp;•&nbsp; Huang et al. <em>DenseNet.</em> CVPR 2017.</p>
+          <p>Zhang et al. <em>ShuffleNet.</em> CVPR 2018 &nbsp;•&nbsp; Iandola et al. <em>SqueezeNet.</em> 2016.</p>
+          <p>Tan &amp; Le. <em>EfficientNet.</em> ICML 2019.</p>
+          <div class="ref-head">Training techniques</div>
+          <p>Loshchilov &amp; Hutter (AdamW); Zhang et al. (Mixup); Cubuk et al. (RandAugment); Huang et al. (Stochastic Depth).</p>
+          <p class="ref-note">Figures reproduced from the cited papers for academic, non-commercial use.</p>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /stage -->
+</div><!-- /viewport -->
+
+<div class="hud">
+  <button class="nav-btn" id="prevBtn" aria-label="previous">‹</button>
+  <div class="counter"><span id="curNum">1</span> / <span id="totalNum">27</span></div>
+  <button class="nav-btn" id="nextBtn" aria-label="next">›</button>
+</div>
+
+<script src="presentation.js"></script>
+</body>
+</html>
