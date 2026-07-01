@@ -720,26 +720,20 @@ html,body{
 /* ============================================================
    CHANNEL-FLOW slide (block arrows)
    ============================================================ */
-.flow-head{ font-size:14.5px; font-weight:700; margin:14px 0 8px; }
+.flow-head{ font-size:15px; font-weight:700; margin:6px 0 14px; }
 .flow-head.rn{ color:var(--accent-deep); }
 .flow-head.cx{ color:var(--accent-warm); }
 .flow-head b{ font-weight:800; }
-.flow-table{ display:flex; flex-direction:column; gap:5px; }
-.flow-row{ display:flex; align-items:center; gap:8px; }
-.fr-stage{ width:24px; flex-shrink:0; color:var(--text-muted); font-weight:700; font-size:15px; }
-.ch{ font-family:'SF Mono',Menlo,monospace; background:var(--milk-tea-dark); border-radius:4px;
-  padding:4px 10px; font-weight:700; font-size:13.5px; color:var(--text-main); min-width:46px; text-align:center; }
-.ch.wide{ background:var(--accent-warm); color:#fff; }
-.op{ font-family:'SF Mono',Menlo,monospace; font-size:11px; font-weight:700; position:relative;
-  padding:0 16px 0 4px; }
-.op::after{ content:"→"; position:absolute; right:2px; font-size:14px; }
-.op.pt{ color:var(--accent-tea); }
-.op.sp{ color:var(--accent-warm); }
-.flow-notes{ margin-top:16px; display:flex; flex-direction:column; gap:6px;
-  border-top:1px solid var(--accent-line); padding-top:12px; }
-.flow-notes p{ font-size:14px; line-height:1.45; color:var(--text-main); }
-.flow-notes .op{ display:inline-block; padding:1px 8px; border-radius:4px; background:var(--milk-tea-dark); }
-.flow-notes .op::after{ content:none; }
+.flow-list{ display:flex; flex-direction:column; gap:14px; }
+.flow-row{ display:flex; align-items:baseline; gap:10px; font-size:21px; color:var(--text-main); }
+.fr-stage{ color:var(--text-muted); font-weight:600; }
+.dash{ color:var(--accent-line); }
+.ar{ color:var(--accent-line); font-weight:700; }
+.ch{ font-weight:700; }
+.ch.wide{ color:var(--accent-warm); font-size:23px; }
+.flow-notes{ margin-top:22px; display:flex; flex-direction:column; gap:8px;
+  border-top:1px solid var(--accent-line); padding-top:14px; }
+.flow-notes p{ font-size:15px; line-height:1.5; color:var(--text-main); }
 .flow-notes b{ color:var(--accent-deep); }
 
 /* ============================================================

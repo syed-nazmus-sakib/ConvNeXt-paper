@@ -616,26 +616,30 @@
       <h3 class="slide-title">Reading the block — <em>what each conv does</em></h3>
       <p class="tag">Channels through the block, stage by stage</p>
 
-      <div class="flow-head rn">ResNet residual · <b>pinch</b> (many → few → many) — the 3×3 runs on the narrow middle</div>
-      <div class="flow-table">
-        <div class="flow-row"><span class="fr-stage">①</span><span class="ch">256</span><span class="op pt">1×1</span><span class="ch">64</span><span class="op sp">3×3</span><span class="ch">64</span><span class="op pt">1×1</span><span class="ch">256</span></div>
-        <div class="flow-row"><span class="fr-stage">②</span><span class="ch">512</span><span class="op pt">1×1</span><span class="ch">128</span><span class="op sp">3×3</span><span class="ch">128</span><span class="op pt">1×1</span><span class="ch">512</span></div>
-        <div class="flow-row"><span class="fr-stage">③</span><span class="ch">1024</span><span class="op pt">1×1</span><span class="ch">256</span><span class="op sp">3×3</span><span class="ch">256</span><span class="op pt">1×1</span><span class="ch">1024</span></div>
-        <div class="flow-row"><span class="fr-stage">④</span><span class="ch">2048</span><span class="op pt">1×1</span><span class="ch">512</span><span class="op sp">3×3</span><span class="ch">512</span><span class="op pt">1×1</span><span class="ch">2048</span></div>
-      </div>
-
-      <div class="flow-head cx">ConvNeXt inverted · <b>widen</b> (few → many → few) — depthwise moved to the top</div>
-      <div class="flow-table">
-        <div class="flow-row"><span class="fr-stage">①</span><span class="ch">96</span><span class="op sp">7×7dw</span><span class="ch">96</span><span class="op pt">1×1</span><span class="ch wide">384</span><span class="op pt">1×1</span><span class="ch">96</span></div>
-        <div class="flow-row"><span class="fr-stage">②</span><span class="ch">192</span><span class="op sp">7×7dw</span><span class="ch">192</span><span class="op pt">1×1</span><span class="ch wide">768</span><span class="op pt">1×1</span><span class="ch">192</span></div>
-        <div class="flow-row"><span class="fr-stage">③</span><span class="ch">384</span><span class="op sp">7×7dw</span><span class="ch">384</span><span class="op pt">1×1</span><span class="ch wide">1536</span><span class="op pt">1×1</span><span class="ch">384</span></div>
-        <div class="flow-row"><span class="fr-stage">④</span><span class="ch">768</span><span class="op sp">7×7dw</span><span class="ch">768</span><span class="op pt">1×1</span><span class="ch wide">3072</span><span class="op pt">1×1</span><span class="ch">768</span></div>
+      <div class="two-col">
+        <div class="col">
+          <div class="flow-head rn">ResNet · <b>pinch</b> (wide → narrow → wide)</div>
+          <div class="flow-list">
+            <div class="flow-row"><span class="fr-stage">Stage ①</span><span class="dash">—</span><span class="ch">256</span><span class="ar">→</span><span class="ch">64</span><span class="ar">→</span><span class="ch">256</span></div>
+            <div class="flow-row"><span class="fr-stage">Stage ②</span><span class="dash">—</span><span class="ch">512</span><span class="ar">→</span><span class="ch">128</span><span class="ar">→</span><span class="ch">512</span></div>
+            <div class="flow-row"><span class="fr-stage">Stage ③</span><span class="dash">—</span><span class="ch">1024</span><span class="ar">→</span><span class="ch">256</span><span class="ar">→</span><span class="ch">1024</span></div>
+            <div class="flow-row"><span class="fr-stage">Stage ④</span><span class="dash">—</span><span class="ch">2048</span><span class="ar">→</span><span class="ch">512</span><span class="ar">→</span><span class="ch">2048</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="flow-head cx">ConvNeXt · <b>widen</b> (narrow → wide → narrow)</div>
+          <div class="flow-list">
+            <div class="flow-row"><span class="fr-stage">Stage ①</span><span class="dash">—</span><span class="ch">96</span><span class="ar">→</span><span class="ch wide">384</span><span class="ar">→</span><span class="ch">96</span></div>
+            <div class="flow-row"><span class="fr-stage">Stage ②</span><span class="dash">—</span><span class="ch">192</span><span class="ar">→</span><span class="ch wide">768</span><span class="ar">→</span><span class="ch">192</span></div>
+            <div class="flow-row"><span class="fr-stage">Stage ③</span><span class="dash">—</span><span class="ch">384</span><span class="ar">→</span><span class="ch wide">1536</span><span class="ar">→</span><span class="ch">384</span></div>
+            <div class="flow-row"><span class="fr-stage">Stage ④</span><span class="dash">—</span><span class="ch">768</span><span class="ar">→</span><span class="ch wide">3072</span><span class="ar">→</span><span class="ch">768</span></div>
+          </div>
+        </div>
       </div>
 
       <div class="flow-notes">
-        <p><span class="op pt">1×1</span> pure <b>channel</b> mixing, no spatial. In ResNet these pinch &amp; un-pinch; in ConvNeXt they do the 4× <b>expand</b> then <b>project back</b>.</p>
-        <p><span class="op sp">3×3</span> ResNet's spatial op — a <b>dense</b> conv, mixes space <em>and</em> channels at once → must sit on the cheap narrow neck.</p>
-        <p><span class="op sp">7×7dw</span> ConvNeXt's spatial op — <b>depthwise</b>, space only, each channel its own filter. Cost <span class="mono">K²·C</span> (no C² term) → cheap enough to run at full width, at the top.</p>
+        <p><b>ResNet</b> pinches the channels down so its <b>dense 3×3</b> — which mixes space <em>and</em> channels at once — runs cheaply on the narrow neck.</p>
+        <p><b>ConvNeXt</b> widens instead: its spatial op is a <b>depthwise 7×7</b> (space only, cost <span class="mono">K²·C</span>), cheap enough to sit at the top on the full width — so the two 1×1's are free to expand 4× and project back.</p>
       </div>
     </section>
 
