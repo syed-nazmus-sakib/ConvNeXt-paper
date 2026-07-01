@@ -285,33 +285,33 @@
     <!-- ============================================================ 10e. MACRO OVERVIEW (agenda) -->
     <section class="slide" data-name="macro-overview">
       <h3 class="slide-title">Now the architecture — <em>five moves</em></h3>
-      <p class="lead">The recipe is fixed. From here we change the network itself, one decision at a time. We'll take each of these in its own slide:</p>
-      <div class="agenda">
-        <div class="ag-card fragment">
+      <p class="lead">The recipe is fixed. From here we change the network itself — one move at a time. We'll signpost each as we go:</p>
+      <div class="agenda tracker focus-1" data-agenda-src>
+        <div class="ag-card">
           <div class="ag-num">1</div>
           <div class="ag-ic ic-stage"><i></i><i></i><i class="hi"></i><i></i></div>
           <div class="ag-title">Stage compute ratio</div>
           <div class="ag-sub">(3,4,6,3) → (3,3,9,3)</div>
         </div>
-        <div class="ag-card fragment">
+        <div class="ag-card">
           <div class="ag-num">2</div>
           <div class="ag-ic ic-patch"><i></i><i></i><i></i><i></i></div>
           <div class="ag-title">“Patchify” stem</div>
           <div class="ag-sub">overlapping conv → 4×4 patches</div>
         </div>
-        <div class="ag-card fragment">
+        <div class="ag-card">
           <div class="ag-num">3</div>
           <div class="ag-ic ic-dw"><i></i><i></i><i></i></div>
           <div class="ag-title">Depthwise convolutions</div>
           <div class="ag-sub">split space &amp; channel mixing</div>
         </div>
-        <div class="ag-card fragment">
+        <div class="ag-card">
           <div class="ag-num">4</div>
           <div class="ag-ic ic-ib"><i class="n"></i><i class="w"></i><i class="n"></i></div>
           <div class="ag-title">Inverted bottleneck</div>
           <div class="ag-sub">widen the middle, 4×</div>
         </div>
-        <div class="ag-card fragment">
+        <div class="ag-card">
           <div class="ag-num">5</div>
           <div class="ag-ic ic-kernel"><i></i><i></i><i></i><i></i><i class="hi"></i><i></i><i></i><i></i><i></i></div>
           <div class="ag-title">Larger kernels</div>
@@ -360,6 +360,13 @@
       </div>
     </section>
 
+    <!-- ============ TRACKER · move 2 ============ -->
+    <section class="slide" data-name="track-2">
+      <h3 class="slide-title">The five moves — <em>step 2</em></h3>
+      <p class="lead">Where we are in reshaping the ResNet block into a ConvNeXt block:</p>
+      <div class="agenda tracker focus-2" data-agenda></div>
+    </section>
+
     <!-- ============================================================ 11b. MACRO ② — PATCHIFY STEM -->
     <section class="slide" data-name="macro-stem" data-anim="stem">
       <h3 class="slide-title">What if we cut the image into <em>clean patches?</em></h3>
@@ -388,6 +395,94 @@
           <div class="pg-cap">each patch is flattened into one token → a sequence, like ViT</div>
         </div>
       </div>
+    </section>
+
+    <!-- ============================================================ 15a. STEM → STAGES PIPELINE (math) -->
+    <section class="slide" data-name="stem-pipeline">
+      <h3 class="slide-title">Where the <em>224 goes</em> — stem, then stages</h3>
+      <p class="tag">Reading the pipeline &nbsp;·&nbsp; the stem precedes stage ①</p>
+
+      <div class="pipe pipe-full">
+        <div class="node"><div class="r">224²×3</div><div class="l">input</div></div>
+        <span class="arrow">→</span>
+        <div class="node stem"><div class="r">STEM</div><div class="l">4× reduce</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="r">56²</div><div class="l">① · 3 blk</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="r">28²</div><div class="l">② · 4 blk</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="r">14²</div><div class="l">③ · 6 blk</div></div>
+        <span class="arrow">→</span>
+        <div class="node"><div class="r">7²</div><div class="l">④ · 3 blk</div></div>
+        <span class="arrow">→</span>
+        <div class="node ghost"><div class="r">GAP</div><div class="l">1000-way</div></div>
+      </div>
+
+      <div class="two-col">
+        <div class="col">
+          <div class="explain">
+            <div class="ex-head">The stages never see the raw image</div>
+            <p>The <b>(3, 4, 6, 3)</b> counts describe only the four main stages. The <b>stem</b> is a separate front block: by the time data reaches stage ①, it is already <span class="mono">56×56×64</span> — not <span class="mono">224×224×3</span>. The stem does the first 4× reduction; the stages start from its output.</p>
+            <div class="ex-head">One rule governs every stage</div>
+            <p>Each stage <b>halves the resolution</b> and <b>doubles the channels</b>. The first stage is the exception — it doesn't downsample, because the stem already did. So the <b>56 → 28 → 14 → 7</b> ladder falls out directly.</p>
+          </div>
+        </div>
+        <div class="col">
+          <div class="mtrace">
+            <span class="mt-l">stem</span><span class="mt-r">224²×3</span><span>→ 56²×64 &nbsp;<span class="mt-c">(4× reduce)</span></span>
+            <span class="mt-l">stage ①</span><span class="mt-r">56²</span><span>ch 64 → 256 &nbsp;<span class="mt-c">· ×3</span></span>
+            <span class="mt-l">stage ②</span><span class="mt-r">28²</span><span>ch &nbsp;&nbsp;&nbsp;→ 512 &nbsp;<span class="mt-c">· ×4</span></span>
+            <span class="mt-l">stage ③</span><span class="mt-r">14²</span><span>ch &nbsp;&nbsp;→ 1024 &nbsp;<span class="mt-c">· ×6</span></span>
+            <span class="mt-l">stage ④</span><span class="mt-r">7²</span><span>ch &nbsp;&nbsp;→ 2048 &nbsp;<span class="mt-c">· ×3</span></span>
+            <span class="mt-l"></span><span class="mt-r">→ GAP</span><span>→ 1000-way linear</span>
+          </div>
+          <div class="cap">Stage ① inherits the stem's 56×56 map — the raw 224×224 grid is already gone. The stem is the bridge that reconciles the two numbers.</div>
+        </div>
+      </div>
+      <p class="kicker-line">The halving between stages (56→28→14→7) lives inside the first block of each stage in ResNet — a detail ConvNeXt later pulls out into its own downsampling layer.</p>
+    </section>
+
+    <!-- ============================================================ 15b. PATCHIFY ARITHMETIC (math) -->
+    <section class="slide" data-name="patchify-math">
+      <h3 class="slide-title">The patchify stem — <em>the arithmetic</em></h3>
+      <p class="tag"><span class="acc">79.4 → 79.5</span> &nbsp;·&nbsp; Macro design ② &nbsp;·&nbsp; kernel = stride, by the numbers</p>
+      <div class="two-col wide-right">
+        <div class="col">
+          <div class="explain">
+            <div class="ex-head">One convolution, kernel = stride</div>
+            <p>ConvNeXt replaces ResNet's two-step stem with a single <b>4×4 conv at stride 4</b>. When kernel size equals stride, the window steps exactly its own width — <b>non-overlapping</b> tiles, no shared pixels, no gaps.</p>
+            <div class="ex-head">The arithmetic</div>
+            <p><span class="mono">224 ÷ 4 = 56</span> tiles across, 56 down → <b>3,136 patches</b>. Each <b>4×4×3 = 48</b> input numbers collapse into one <b>96</b>-length vector (one value per filter) — spatially identical to ResNet's stem output, in <em>one</em> operation instead of two.</p>
+            <div class="ex-head">It is ViT's patch embedding</div>
+            <p>Slice into non-overlapping tiles, linearly project each into a token — exactly how <b>ViT</b> and <b>Swin</b> tokenize an image.</p>
+          </div>
+        </div>
+        <div class="col anim-col">
+          <div class="mathbox">
+            224×224×3<br>
+            <span class="ml">→ (4×4 conv, stride 4)</span><br>
+            <b>56×56×96</b> &nbsp; <span class="ml"># 3,136 patches × 96</span>
+          </div>
+          <div class="mgrid-wrap">
+            <div class="mtiles" id="mathPatch"></div>
+            <span class="mto">→</span>
+            <div class="mseq" id="mathTokens"></div>
+          </div>
+          <div class="cap">Each non-overlapping 4×4 patch → one token · a sequence, like ViT.</div>
+          <div class="stem-cmp">
+            <div class="stem-row"><span class="stag rn">ResNet</span><span class="flow">224²×3 <span class="op">→7×7 s2→</span> 112²×64 <span class="op">→pool→</span> 56²×64</span></div>
+            <div class="stem-row"><span class="stag cx">ConvNeXt</span><span class="flow">224²×3 <span class="op">→4×4 s4→</span> 56²×96 <span class="op">(one op)</span></span></div>
+          </div>
+        </div>
+      </div>
+      <p class="kicker-line">+0.1% is the flattest move in the roadmap — the value is <em>alignment</em>, not the number: a fair, apples-to-apples interface with the Transformer. (Patchify stems train marginally less stably — Xiao et&nbsp;al. 2021 — which the modern recipe absorbs.)</p>
+    </section>
+
+    <!-- ============ TRACKER · move 3 ============ -->
+    <section class="slide" data-name="track-3">
+      <h3 class="slide-title">The five moves — <em>step 3</em></h3>
+      <p class="lead">Where we are in reshaping the ResNet block into a ConvNeXt block:</p>
+      <div class="agenda tracker focus-3" data-agenda></div>
     </section>
 
     <!-- ============================================================ 12. RESNEXT-IFY (animated) -->
@@ -432,6 +527,47 @@
       </div>
     </section>
 
+    <!-- ============================================================ DEPTHWISE COST (math) -->
+    <section class="slide" data-name="depthwise-cost">
+      <h3 class="slide-title">Why depthwise is <em>so cheap</em> — the arithmetic</h3>
+      <p class="tag">Depthwise separable conv &nbsp;·&nbsp; cost per output pixel</p>
+      <div class="two-col">
+        <div class="col">
+          <div class="explain">
+            <div class="ex-head">One conv, two entangled jobs</div>
+            <p>A standard convolution does two things in a single weighted sum — it mixes over <b>space</b> (blends neighbouring pixels) <em>and</em> over <b>channels</b> (sums across every input channel). Powerful, but the two roles are fused, and the cost is their <em>product</em>.</p>
+            <div class="ex-head">Factor it — where, then what</div>
+            <p><b>Depthwise</b> gives each channel its own filter → mixes space only, cost <span class="mono">K²·C</span>. <b>Pointwise 1×1</b> sums across channels at one pixel → mixes channels only, cost <span class="mono">C²</span>. A <em>sum</em> (K²C + C²) replaces a <em>product</em> (K²C²).</p>
+          </div>
+        </div>
+        <div class="col anim-col">
+          <div class="mathbox">
+            <span class="ml"># standard conv, per output pixel</span><br>
+            K² · C · C &nbsp;=&nbsp; <b>K²C²</b><br><br>
+            <span class="ml"># depthwise (space) + pointwise (channels)</span><br>
+            K²·C &nbsp;+&nbsp; C² &nbsp;=&nbsp; <b>K²C + C²</b>
+          </div>
+          <div class="mathbox">
+            <span class="ml"># how cheap, exactly</span><br>
+            ratio = (K²C + C²) / K²C² = 1/C + 1/K²<br>
+            <span class="ml">C = 96, K = 7 →</span> 1/96 + 1/49 ≈ <b>3%</b>
+          </div>
+          <div class="cost-bars">
+            <div class="cb-row"><span class="cb-name">standard 7×7</span><div class="cb-track"><div class="cb-bar std">100%</div></div></div>
+            <div class="cb-row"><span class="cb-name">depthwise + 1×1</span><div class="cb-track"><div class="cb-bar sep"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="kicker-line">The bigger the kernel and the wider the net, the more you save — this is exactly what makes the later <b>7×7 kernel</b> affordable.</p>
+    </section>
+
+    <!-- ============ TRACKER · move 4 ============ -->
+    <section class="slide" data-name="track-4">
+      <h3 class="slide-title">The five moves — <em>step 4</em></h3>
+      <p class="lead">Where we are in reshaping the ResNet block into a ConvNeXt block:</p>
+      <div class="agenda tracker focus-4" data-agenda></div>
+    </section>
+
     <!-- ============================================================ 13. INVERTED BOTTLENECK (animated) -->
     <section class="slide" data-name="inverted" data-anim="inverted">
       <h3 class="slide-title">What if we <em>widen</em> the middle instead of pinching it?</h3>
@@ -473,6 +609,41 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ============================================================ CHANNEL FLOW (math) -->
+    <section class="slide" data-name="channel-flow">
+      <h3 class="slide-title">Reading the block — <em>what each conv does</em></h3>
+      <p class="tag">Channels through the block, stage by stage</p>
+
+      <div class="flow-head rn">ResNet residual · <b>pinch</b> (many → few → many) — the 3×3 runs on the narrow middle</div>
+      <div class="flow-table">
+        <div class="flow-row"><span class="fr-stage">①</span><span class="ch">256</span><span class="op pt">1×1</span><span class="ch">64</span><span class="op sp">3×3</span><span class="ch">64</span><span class="op pt">1×1</span><span class="ch">256</span></div>
+        <div class="flow-row"><span class="fr-stage">②</span><span class="ch">512</span><span class="op pt">1×1</span><span class="ch">128</span><span class="op sp">3×3</span><span class="ch">128</span><span class="op pt">1×1</span><span class="ch">512</span></div>
+        <div class="flow-row"><span class="fr-stage">③</span><span class="ch">1024</span><span class="op pt">1×1</span><span class="ch">256</span><span class="op sp">3×3</span><span class="ch">256</span><span class="op pt">1×1</span><span class="ch">1024</span></div>
+        <div class="flow-row"><span class="fr-stage">④</span><span class="ch">2048</span><span class="op pt">1×1</span><span class="ch">512</span><span class="op sp">3×3</span><span class="ch">512</span><span class="op pt">1×1</span><span class="ch">2048</span></div>
+      </div>
+
+      <div class="flow-head cx">ConvNeXt inverted · <b>widen</b> (few → many → few) — depthwise moved to the top</div>
+      <div class="flow-table">
+        <div class="flow-row"><span class="fr-stage">①</span><span class="ch">96</span><span class="op sp">7×7dw</span><span class="ch">96</span><span class="op pt">1×1</span><span class="ch wide">384</span><span class="op pt">1×1</span><span class="ch">96</span></div>
+        <div class="flow-row"><span class="fr-stage">②</span><span class="ch">192</span><span class="op sp">7×7dw</span><span class="ch">192</span><span class="op pt">1×1</span><span class="ch wide">768</span><span class="op pt">1×1</span><span class="ch">192</span></div>
+        <div class="flow-row"><span class="fr-stage">③</span><span class="ch">384</span><span class="op sp">7×7dw</span><span class="ch">384</span><span class="op pt">1×1</span><span class="ch wide">1536</span><span class="op pt">1×1</span><span class="ch">384</span></div>
+        <div class="flow-row"><span class="fr-stage">④</span><span class="ch">768</span><span class="op sp">7×7dw</span><span class="ch">768</span><span class="op pt">1×1</span><span class="ch wide">3072</span><span class="op pt">1×1</span><span class="ch">768</span></div>
+      </div>
+
+      <div class="flow-notes">
+        <p><span class="op pt">1×1</span> pure <b>channel</b> mixing, no spatial. In ResNet these pinch &amp; un-pinch; in ConvNeXt they do the 4× <b>expand</b> then <b>project back</b>.</p>
+        <p><span class="op sp">3×3</span> ResNet's spatial op — a <b>dense</b> conv, mixes space <em>and</em> channels at once → must sit on the cheap narrow neck.</p>
+        <p><span class="op sp">7×7dw</span> ConvNeXt's spatial op — <b>depthwise</b>, space only, each channel its own filter. Cost <span class="mono">K²·C</span> (no C² term) → cheap enough to run at full width, at the top.</p>
+      </div>
+    </section>
+
+    <!-- ============ TRACKER · move 5 ============ -->
+    <section class="slide" data-name="track-5">
+      <h3 class="slide-title">The five moves — <em>step 5</em></h3>
+      <p class="lead">Where we are in reshaping the ResNet block into a ConvNeXt block:</p>
+      <div class="agenda tracker focus-5" data-agenda></div>
     </section>
 
     <!-- ============================================================ 14. LARGE KERNELS (animated) -->

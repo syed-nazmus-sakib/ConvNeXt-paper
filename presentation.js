@@ -417,6 +417,27 @@
     step();
   }
 
+  /* ---------- MATH slide: patchify tile grid → token sequence ---------- */
+  function buildMathPatch(){
+    const tg = document.getElementById('mathPatch');
+    const sq = document.getElementById('mathTokens');
+    if (!tg || !sq) return;
+    for (let r=0;r<4;r++) for (let c=0;c<4;c++){
+      const t = (r+c)/6;                                 // 0..1 diagonal
+      const R = Math.round(120 + t*130), G = Math.round(150 - t*40), B = Math.round(210 - t*150);
+      const col = `rgb(${R},${G},${B})`;
+      const d = document.createElement('div'); d.className='mtile'; d.style.background=col; tg.appendChild(d);
+      const k = document.createElement('div'); k.className='mtok'; k.style.background=col; sq.appendChild(k);
+    }
+  }
+
+  /* ---------- clone agenda cards into each tracker slide ---------- */
+  function buildTrackers(){
+    const src = document.querySelector('[data-agenda-src]');
+    if (!src) return;
+    document.querySelectorAll('.agenda[data-agenda]').forEach(a => { a.innerHTML = src.innerHTML; });
+  }
+
   /* ---------- init ---------- */
   // Build static animation structures once (after their data consts exist)
   buildRoadmap();
@@ -424,5 +445,7 @@
   buildReceptiveField();
   buildStem();
   buildSummary();
+  buildMathPatch();
+  buildTrackers();
   showSlide(0);
 })();
